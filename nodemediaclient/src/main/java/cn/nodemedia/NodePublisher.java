@@ -43,9 +43,13 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
     private int cameraWidth;
     private int cameraHeight;
     private int surfaceOri;
+    private int videoOri;
     private int surfaceWidth;
     private int surfaceHeight;
     private int logLevel;
+
+    public static final int VIDEO_ORIENTATION_PORTRAIT = 0;
+    public static final int VIDEO_ORIENTATION_LANDSCAPE = 1;
 
     public static final int VIDEO_PPRESET_16X9_270 = 0;
     public static final int VIDEO_PPRESET_16X9_360 = 1;
@@ -97,6 +101,7 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
         this.pageUrl = "";
         this.swfUrl = "";
         this.connArgs = "";
+        this.videoOri = -1;
         this.wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 
         if (sAudioFocusChangeListener == null) {
@@ -141,7 +146,15 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
     }
 
     private int getWindowRotation() {
-        return wm.getDefaultDisplay().getRotation();
+        if (this.videoOri > -1) {
+            return this.videoOri;
+        } else {
+            return wm.getDefaultDisplay().getRotation();
+        }
+    }
+
+    public void setVideoOrientation(int orientation) {
+        this.videoOri = orientation;
     }
 
     public void setOutputUrl(String outputUrl) {
