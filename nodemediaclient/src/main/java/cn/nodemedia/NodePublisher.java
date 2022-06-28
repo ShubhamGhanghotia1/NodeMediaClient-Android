@@ -39,17 +39,24 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
     private boolean isStartPreview;
 
     private int cameraId;
-    private int cameraOri;
+    private int cameraOri; //读出的摄像头方向
+    private int customCameraOri; //自定义的摄像头方向，
     private int cameraWidth;
     private int cameraHeight;
-    private int surfaceOri;
-    private int videoOri;
+    private int surfaceOri; //屏幕方向
+    private int videoOri; //自定义的视频方向
+
     private int surfaceWidth;
     private int surfaceHeight;
     private int logLevel;
 
     public static final int VIDEO_ORIENTATION_PORTRAIT = 0;
     public static final int VIDEO_ORIENTATION_LANDSCAPE = 1;
+
+    public static final int CAMERA_ORIENTATION_0 = 0;
+    public static final int CAMERA_ORIENTATION_90 = 90;
+    public static final int CAMERA_ORIENTATION_180 = 180;
+    public static final int CAMERA_ORIENTATION_270 = 270;
 
     public static final int VIDEO_PPRESET_16X9_270 = 0;
     public static final int VIDEO_PPRESET_16X9_360 = 1;
@@ -101,6 +108,7 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
         this.pageUrl = "";
         this.swfUrl = "";
         this.connArgs = "";
+        this.customCameraOri = -1;
         this.videoOri = -1;
         this.wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 
@@ -145,6 +153,14 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
 
     }
 
+    private int getCameraOri() {
+        if(this.customCameraOri > -1) {
+            return this.customCameraOri;
+        }else {
+            return mNodeCameraView.getCameraOrientation();
+        }
+    }
+
     private int getWindowRotation() {
         if (this.videoOri > -1) {
             return this.videoOri;
@@ -155,6 +171,10 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
 
     public void setVideoOrientation(int orientation) {
         this.videoOri = orientation;
+    }
+
+    public void setCameraOrientation(int orientation) {
+        this.customCameraOri = orientation;
     }
 
     public void setOutputUrl(String outputUrl) {
@@ -207,7 +227,7 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
         }
         int ret = mNodeCameraView.startPreview(cameraId);
         isFrontCamera = mNodeCameraView.isFrontCamera();
-        cameraOri = mNodeCameraView.getCameraOrientation();
+        cameraOri = getCameraOri();
         surfaceOri = getWindowRotation();
         if (ret == 0) {
             isStartPreview = true;
@@ -360,7 +380,7 @@ public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
 
     @Override
     public void OnChange(int cameraWidth, int cameraHeight, int surfaceWidth, int surfaceHeight) {
-        this.cameraOri = mNodeCameraView.getCameraOrientation();
+        this.cameraOri = getCameraOri();
         this.surfaceOri = getWindowRotation();
         this.cameraWidth = cameraWidth;
         this.cameraHeight = cameraHeight;
