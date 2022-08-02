@@ -13,9 +13,23 @@ allprojects {
 }
 ```
 
+## 新版 7.2 gradle，
+settings.gradle
+
+```
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
 ```
 dependencies {
-    compile 'com.github.NodeMedia:NodeMediaClient-Android:2.9.20'
+    implementation 'com.github.NodeMedia:NodeMediaClient-Android:2.9.20'
 ```
 # 简单用法
 完整用例：[QLive源码](https://github.com/NodeMedia/QLive-Android)[(API文档)](https://github.com/NodeMedia/NodeMediaClient-Android/tree/2.x/docs)
