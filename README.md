@@ -27,7 +27,7 @@ dependencyResolutionManagement {
 
 ```
 dependencies {
-    implementation 'com.github.NodeMedia:NodeMediaClient-Android:2.9.22'
+    implementation 'com.github.NodeMedia:NodeMediaClient-Android:2.9.23'
     
     
 }
