@@ -1,243 +1,266 @@
+/**
+ * ©2023 NodeMedia.cn
+ * <p>
+ * Copyright © 2015 - 2023 NodeMedia.cn All Rights Reserved.
+ */
+
 package cn.nodemedia;
 
 import android.content.Context;
-import android.media.AudioManager;
+import android.graphics.SurfaceTexture;
+import android.view.Gravity;
 import android.view.Surface;
+import android.view.TextureView;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
-
-/**
- * Created by ALiang on 16/12/15.
- */
-
-public class NodePlayer implements NodePlayerView.RenderCallback {
+public class NodePlayer implements TextureView.SurfaceTextureListener {
     static {
         System.loadLibrary("NodeMediaClient");
     }
 
+    public static final int LOG_LEVEL_ERROR = 0;
+    public static final int LOG_LEVEL_INFO = 1;
+    public static final int LOG_LEVEL_DEBUG = 2;
+
+    private static final String TAG = "NodeMedia.java";
+
+    private OnNodePlayerEventListener onNodePlayerEventListener = null;
+    private TextureView tv = null;
+    private Context ctx;
     private long id;
-    private NodePlayerView mNodePlayerView;
-    private NodePlayerDelegate mNodePlayerDelegate;
-    private static AudioManager.OnAudioFocusChangeListener sAudioFocusChangeListener = null;
-    private static List<NodePlayer> players = new ArrayList<>(0);
 
-    private String inputUrl;
-    private String pageUrl;
-    private String swfUrl;
-    private String connArgs;
-    private String rtspTransport;
+    private FrameLayout.LayoutParams LP = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            Gravity.CENTER);
 
-    private int bufferTime;
-    private int maxBufferTime;
-    private int autoReconnectWaitTimeout;
-    private int connectWaitTimeout;
-    private int logLevel;
-    private boolean hwEnable;
-    private boolean audioEnable;
-    private boolean videoEnable;
-    private boolean subscribe;
-
-
-    public static final String RTSP_TRANSPORT_UDP = "udp";
-    public static final String RTSP_TRANSPORT_TCP = "tcp";
-    public static final String RTSP_TRANSPORT_UDP_MULTICAST = "udp_multicast";
-    public static final String RTSP_TRANSPORT_HTTP = "http";
-
-    public static final int NM_LOGLEVEL_ERROR = 0;
-    public static final int NM_LOGLEVEL_INFO = 1;
-    public static final int NM_LOGLEVEL_DEBUG = 2;
-
-    public NodePlayer( Context context) {
-        this(context, "");
+    /**
+     * 创建NodePlayer
+     *
+     * @param context Android context
+     * @param license 授权码
+     */
+    public NodePlayer(Context context, String license) {
+        id = jniInit(context, license);
+        ctx = context;
     }
 
-    public NodePlayer( Context context,  String license) {
-        this.id = jniInit(context, license);
-        this.inputUrl = "";
-        this.pageUrl = "";
-        this.swfUrl = "";
-        this.connArgs = "";
-        this.logLevel = NM_LOGLEVEL_ERROR;
-        this.rtspTransport = RTSP_TRANSPORT_UDP;
-        this.bufferTime = 500;
-        this.maxBufferTime = 1000;
-        this.autoReconnectWaitTimeout = 2000;
-        this.connectWaitTimeout = 0;
-        this.hwEnable = true;
-        this.audioEnable = true;
-        this.videoEnable = true;
-        this.subscribe = false;
-
-        if (sAudioFocusChangeListener == null) {
-            sAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
-                @Override
-                public void onAudioFocusChange(int focusChange) {
-                    if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-                        for (NodePlayer player : players) {
-                            if (player.audioEnable) {
-                                player.jniSetAudioEnable(false);
-                            }
-                        }
-                    } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-                        for (NodePlayer player : players) {
-                            if (player.audioEnable) {
-                                player.jniSetAudioEnable(true);
-                            }
-                        }
-                    }
-                }
-            };
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            am.requestAudioFocus(sAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-
-        }
-        players.add(this);
-    }
-
-    public void release() {
-        final NodePlayer self = this;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                self.mNodePlayerDelegate = null;
-                self.mNodePlayerView = null;
-                self.jniDeInit();
-                self.id = 0;
-                players.remove(self);
-            }
-        }).start();
-    }
-
-    public void setInputUrl( String inputUrl) {
-        this.inputUrl = inputUrl.trim();
-    }
-
-    public void setPageUrl( String pageUrl) {
-        this.pageUrl = pageUrl.trim();
-    }
-
-    public void setSwfUrl( String swfUrl) {
-        this.swfUrl = swfUrl.trim();
-    }
-
-    public void setConnArgs( String connArgs) {
-        this.connArgs = connArgs;
-    }
-
-    public void setRtspTransport( String rtspTransport) {
-        this.rtspTransport = rtspTransport;
-    }
-
-    public void setBufferTime(int bufferTime) {
-        this.bufferTime = bufferTime;
-    }
-
-    public void setMaxBufferTime(int maxBufferTime) {
-        this.maxBufferTime = maxBufferTime;
-    }
-
-    public void setHWEnable(boolean hwEnable) {
-        this.hwEnable = hwEnable;
-    }
-
-    public void setAutoReconnectWaitTimeout(int autoReconnectWaitTimeout) {
-        this.autoReconnectWaitTimeout = autoReconnectWaitTimeout;
-    }
-
-    public void setConnectWaitTimeout(int connectWaitTimeout) {
-        this.connectWaitTimeout = connectWaitTimeout;
-    }
-
-    public void setLogLevel(int logLevel) {
-        this.logLevel = logLevel;
-    }
-
-    public void setAudioEnable(boolean audioEnable) {
-        this.audioEnable = audioEnable;
-        jniSetAudioEnable(audioEnable);
-    }
-
-    public void setVideoEnable(boolean videoEnable) {
-        this.videoEnable = videoEnable;
-        jniSetVideoEnable(videoEnable);
-    }
-
-    public void setSubscribe(boolean subscribe) {
-        this.subscribe = subscribe;
+    @Override
+    protected void finalize() {
+        jniFree();
     }
 
 
-    public void setPlayerView( NodePlayerView npv) {
-        mNodePlayerView = npv;
-        jniSetVideoEnable(true);
-        npv.setRenderCallback(this);
-    }
-
-    public void setNodePlayerDelegate( NodePlayerDelegate delegate) {
-        mNodePlayerDelegate = delegate;
-    }
-
-    private void onEvent(int event, String eventMsg) {
-        if (mNodePlayerDelegate != null) {
-            mNodePlayerDelegate.onEventCallback(this, event, eventMsg);
-        }
-
-        if (event == 1104 && mNodePlayerView != null) {
-            mNodePlayerView.setVideoSize(Integer.valueOf(eventMsg.split("x")[0]), Integer.valueOf(eventMsg.split("x")[1]));
+    /**
+     * 附加到视图
+     *
+     * @param vg ViewGroup的子类
+     */
+    public void attachView(ViewGroup vg) {
+        if (this.tv == null) {
+            this.tv = new TextureView(ctx);
+            this.tv.setLayoutParams(LP);
+            this.tv.setSurfaceTextureListener(this);
+            this.tv.setKeepScreenOn(true);
+            vg.addView(this.tv);
         }
     }
 
-    private native long jniInit(Object context, String premium);
+    /**
+     * 返回当前的TextureView
+     *
+     * @return 当前的TextureView
+     */
+    public TextureView getTextureView() {
+        return this.tv;
+    }
 
-    private native void jniDeInit();
+    /**
+     * 从视图中移除
+     */
+    public void detachView() {
+        if (this.tv != null) {
+            this.tv.setKeepScreenOn(false);
+            this.tv = null;
+        }
+    }
 
-    private native int jniSetSurface(Object surface);
+    /**
+     * 设置事件回调
+     * @param listener
+     */
+    public void setOnNodePlayerEventListener(OnNodePlayerEventListener listener) {
+        this.onNodePlayerEventListener = listener;
+    }
 
-    private native int jniSetSurfaceChange();
+    private void onEvent(int event, String msg) {
+//        Log.d(TAG, "on Event: " + event + " Message:" + msg);
+        if (this.onNodePlayerEventListener != null) {
+            this.onNodePlayerEventListener.onEventCallback(this, event, msg);
+        }
+    }
 
-    private native int jniSetAudioEnable(boolean enable);
+    private native long jniInit(Context context, String license);
 
-    private native int jniSetVideoEnable(boolean enable);
+    private native void jniFree();
 
-    public native int setVolume(float volume);
+    /**
+     * 开始播放
+     *
+     * @param url 播放的url
+     * @return
+     */
+    public native int start(String url);
 
-    public native void setCryptoKey(String cryptoKey);
-
-    public native int start();
-
+    /**
+     * 停止播放
+     *
+     * @return
+     */
     public native int stop();
 
-    public native int pause();
+    /**
+     * 暂停或恢复点播视频播放
+     *
+     * @param pause 是否暂停
+     * @return
+     */
+    public native int pause(boolean pause);
 
-    public native int seekTo(long pos);
+    /**
+     * 时移
+     *
+     * @param pts 时移点，单位毫秒
+     * @return
+     */
+    public native int seek(long pts);
 
+    /**
+     * 视频截图
+     *
+     * @param filename 保存的文件名，jpeg格式
+     * @return
+     */
+    public native int screenshot(String filename);
+
+    /**
+     * 视频是否是点播回放
+     *
+     * @return 是否点播
+     */
+    public native boolean isVod();
+
+    /**
+     * 视频是否暂停了
+     *
+     * @return 是否暂停
+     */
+    public native boolean isPause();
+
+    /**
+     * 获取点播视频时长
+     *
+     * @return 单位毫秒
+     */
     public native long getDuration();
 
+    /**
+     * 获取点播视频当前播放点
+     *
+     * @return 单位毫秒
+     */
     public native long getCurrentPosition();
 
+    /**
+     * 获取点播视频缓冲点
+     *
+     * @return 单位毫秒
+     */
     public native long getBufferPosition();
 
-    public native int getBufferPercentage();
+    /**
+     * 设置日志等级
+     *
+     * @param logLevel 等级
+     */
+    public native void setLogLevel(int logLevel);
 
-    public native boolean isPlaying();
+    /**
+     * 设置缓存时长
+     *
+     * @param bufferTime 单位毫秒
+     */
+    public native void setBufferTime(int bufferTime);
 
-    public native boolean isLive();
+    /**
+     * 设置缩放模式
+     *
+     * @param mode 模式
+     */
+    public native void setScaleMode(int mode);
+
+    /**
+     * 设置视频surface
+     *
+     * @param surface 视频surface
+     */
+    public native void setVideoSurface(Surface surface);
+
+    /**
+     * 设置视频解密密码
+     *
+     * @param cryptoKey 16字节密码
+     */
+    public native void setCryptoKey(String cryptoKey);
+
+    /**
+     * 设置音量
+     *
+     * @param volume 0.0 --- 1.0
+     */
+    public native void setVolume(float volume);
+
+    /**
+     * 设置是否开启硬件加速
+     * @param enable 开关
+     */
+    public native void setHWAccelEnable(boolean enable);
+
+    /**
+     * 视频surface大小已改变
+     */
+    public native void resizeVideoSurface();
+
+    public native void rotateVideo(int rotate);
 
     @Override
-    public void onSurfaceCreated( Surface surface) {
-        jniSetSurface(surface);
+    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
+        setVideoSurface(new Surface(surfaceTexture));
+//        Log.i(TAG, "onSurfaceTextureAvailable: " + width + "x" + height);
     }
 
     @Override
-    public void onSurfaceChanged(int width, int height) {
-        jniSetSurfaceChange();
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
+//        Log.i(TAG, "onSurfaceTextureSizeChanged: " + width + "x" + height);
+        resizeVideoSurface();
     }
 
     @Override
-    public void onSurfaceDestroyed() {
-        jniSetSurface(null);
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+//        Log.i(TAG, "onSurfaceTextureDestroyed");
+//        setVideoSurface(null);
+        return false;
     }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+//        Log.d(TAG, "onSurfaceTextureUpdated");
+    }
+
+    public interface OnNodePlayerEventListener {
+        void onEventCallback(NodePlayer player, int event, String msg);
+    }
+
 }

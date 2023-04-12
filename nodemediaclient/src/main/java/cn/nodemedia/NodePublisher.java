@@ -1,410 +1,320 @@
+/**
+ * ©2023 NodeMedia
+ * <p>
+ * Copyright © 2015 - 2023 NodeMedia.All Rights Reserved.
+ */
+
 package cn.nodemedia;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Matrix;
-import android.media.AudioManager;
+import android.graphics.SurfaceTexture;
+import android.opengl.GLSurfaceView;
+import android.util.Size;
+import android.view.Gravity;
+import android.view.Surface;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import androidx.annotation.NonNull;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraInfo;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
 
-/**
- * Created by ${$USER_NAME} on 17/4/11.
- */
+import com.google.common.util.concurrent.ListenableFuture;
+import java.util.concurrent.ExecutionException;
 
-public class NodePublisher implements NodeCameraView.NodeCameraViewCallback {
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
+public class NodePublisher {
     static {
         System.loadLibrary("NodeMediaClient");
     }
 
-    private long id;
-    private WindowManager wm = null;
-    private NodePublisherDelegate mNodePublisherDelegate;
-    private NodePublisherAudioRawDelegate mNodePublisherAudioRawDelegate;
-    private NodePublisherVideoTextureDelegate mNodePublisherVideoTextureDelegate;
-    private CapturePictureListener mCapturePictureListener;
-    private NodeCameraView mNodeCameraView;
-    private static AudioManager.OnAudioFocusChangeListener sAudioFocusChangeListener = null;
-    private static List<NodePublisher> publishers = new ArrayList<>(0);
+    public static final int LOG_LEVEL_ERROR = 0;
+    public static final int LOG_LEVEL_INFO = 1;
+    public static final int LOG_LEVEL_DEBUG = 2;
 
-    private String outputUrl;
-    private String pageUrl;
-    private String swfUrl;
-    private String connArgs;
+    public static final int NMC_CODEC_ID_H264 = 27;
+    public static final int NMC_CODEC_ID_H265 = 173;
+    public static final int NMC_CODEC_ID_AAC = 86018;
 
-    private boolean isFrontCamera;
-    private boolean isDisplayFrontMirror;
-    private boolean isStartPreview;
+    public static final int NMC_PROFILE_AUTO = 0;
+    public static final int NMC_PROFILE_H264_BASELINE = 66;
+    public static final int NMC_PROFILE_H264_MAIN = 77;
+    public static final int NMC_PROFILE_H264_HIGH = 100;
+    public static final int NMC_PROFILE_H265_MAIN = 1;
+    public static final int NMC_PROFILE_AAC_LC = 1;
+    public static final int NMC_PROFILE_AAC_HE = 4;
+    public static final int NMC_PROFILE_AAC_HE_V2 = 28;
+    public static final int NMC_PROFILE_AAC_LD = 22;
+    public static final int NMC_PROFILE_AAC_ELD = 38;
 
-    private int cameraId;
-    private int cameraOri; //读出的摄像头方向
-    private int customCameraOri; //自定义的摄像头方向，
-    private int cameraWidth;
-    private int cameraHeight;
-    private int surfaceOri; //屏幕方向
-    private int videoOri; //自定义的视频方向
-
-    private int surfaceWidth;
-    private int surfaceHeight;
-    private int logLevel;
+    public static final int VIDEO_RC_CRF = 0;
+    public static final int VIDEO_RC_ABR = 1;
+    public static final int VIDEO_RC_CBR = 2;
+    public static final int VIDEO_RC_VBV = 3;
 
     public static final int VIDEO_ORIENTATION_PORTRAIT = 0;
     public static final int VIDEO_ORIENTATION_LANDSCAPE = 1;
 
-    public static final int CAMERA_ORIENTATION_0 = 0;
-    public static final int CAMERA_ORIENTATION_90 = 90;
-    public static final int CAMERA_ORIENTATION_180 = 180;
-    public static final int CAMERA_ORIENTATION_270 = 270;
+    private static final String TAG = "NodeMedia.java";
+    private OnNodePublisherEventListener onNodePublisherEventListener;
+    private OnNodePublisherEffectorListener onNodePublisherEffectorListener;
+    private GLCameraView glpv;
+    private Camera mCamera;
+    private Context ctx;
+    private long id;
+    private int fpsCount;
+    private long fpsTime;
+    private boolean isOpenFrontCamera = false;
+    private int videoOrientation = Surface.ROTATION_0;
+    private int videoWidth = 720;
+    private int videoHeight = 1280;
+    private int cameraWidth = 0;
+    private int cameraHeight = 0;
+    private int surfaceWidth = 0;
+    private int surfaceHeight = 0;
 
-    public static final int VIDEO_PPRESET_16X9_270 = 0;
-    public static final int VIDEO_PPRESET_16X9_360 = 1;
-    public static final int VIDEO_PPRESET_16X9_480 = 2;
-    public static final int VIDEO_PPRESET_16X9_540 = 3;
-    public static final int VIDEO_PPRESET_16X9_720 = 4;
-    public static final int VIDEO_PPRESET_16X9_1080 = 5;
+    private final FrameLayout.LayoutParams LP = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            Gravity.CENTER);
 
-    public static final int VIDEO_PPRESET_4X3_270 = 10;
-    public static final int VIDEO_PPRESET_4X3_360 = 11;
-    public static final int VIDEO_PPRESET_4X3_480 = 12;
-    public static final int VIDEO_PPRESET_4X3_540 = 13;
-    public static final int VIDEO_PPRESET_4X3_720 = 14;
-    public static final int VIDEO_PPRESET_4X3_1080 = 15;
-
-    public static final int VIDEO_PPRESET_1X1_270 = 20;
-    public static final int VIDEO_PPRESET_1X1_360 = 21;
-    public static final int VIDEO_PPRESET_1X1_480 = 22;
-    public static final int VIDEO_PPRESET_1X1_540 = 23;
-    public static final int VIDEO_PPRESET_1X1_720 = 24;
-    public static final int VIDEO_PPRESET_1X1_1080 = 25;
-
-    public static final int AUDIO_PROFILE_LCAAC = 0;
-    public static final int AUDIO_PROFILE_HEAAC = 1;
-    public static final int AUDIO_PROFILE_SPEEX = 2;
-
-    public static final int VIDEO_PROFILE_BASELINE = 0;
-    public static final int VIDEO_PROFILE_MAIN = 1;
-    public static final int VIDEO_PROFILE_HIGH = 2;
-    public static final int VIDEO_PROFILE_HEVC_MAIN = 3;
-
-    public static final int CAMERA_BACK = 0;
-    public static final int CAMERA_FRONT = 1;
-
-    public static final int NM_PIXEL_BGRA = 1;
-    public static final int NM_PIXEL_RGBA = 2;
-
-    public static final int NM_LOGLEVEL_ERROR = 0;
-    public static final int NM_LOGLEVEL_INFO = 1;
-    public static final int NM_LOGLEVEL_DEBUG = 2;
-
-    public NodePublisher(Context context) {
-        this(context, "");
+    public NodePublisher(@NonNull Context context, @NonNull String license) {
+        ctx = context;
+        id = jniInit(context, license);
     }
 
-    public NodePublisher(Context context, String license) {
-        this.id = jniInit(context, license);
-        this.outputUrl = "";
-        this.pageUrl = "";
-        this.swfUrl = "";
-        this.connArgs = "";
-        this.customCameraOri = -1;
-        this.videoOri = -1;
-        this.wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-
-        if (sAudioFocusChangeListener == null) {
-            sAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
-                @Override
-                public void onAudioFocusChange(int focusChange) {
-                    if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-                        for (NodePublisher publisher : publishers) {
-                            //麦克风静音
-                            publisher.jniAudioMuted(true);
-                        }
-                    } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-                        for (NodePublisher publisher : publishers) {
-                            //麦克风恢复
-                            publisher.jniAudioMuted(false);
-                        }
-                    }
-                }
-            };
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            am.requestAudioFocus(sAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-
-        }
-        publishers.add(this);
+    public void setOnNodePublisherEventListener(OnNodePublisherEventListener onNodePublisherEventListener) {
+        this.onNodePublisherEventListener = onNodePublisherEventListener;
     }
 
-    public void release() {
-        final NodePublisher self = this;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                self.mNodePublisherDelegate = null;
-                self.mNodeCameraView = null;
-                self.wm = null;
-                self.jniDeInit();
-                self.jniFreeGPUImage();
-                self.id = 0;
-                publishers.remove(self);
-            }
-        }).start();
-
+    public void setOnNodePublisherEffectorListener(OnNodePublisherEffectorListener onNodePublisherEffectorListener) {
+        this.onNodePublisherEffectorListener = onNodePublisherEffectorListener;
     }
 
-    private int getCameraOri() {
-        if(this.customCameraOri > -1) {
-            return this.customCameraOri;
-        }else {
-            return mNodeCameraView.getCameraOrientation();
+    public void attachView(@NonNull ViewGroup vg) {
+        if (this.glpv == null) {
+            this.glpv = new GLCameraView(this.ctx);
+            this.glpv.setLayoutParams(LP);
+            this.glpv.setKeepScreenOn(true);
+            vg.addView(this.glpv);
         }
     }
 
-    private int getWindowRotation() {
-        if (this.videoOri > -1) {
-            return this.videoOri;
-        } else {
-            return wm.getDefaultDisplay().getRotation();
+    public void detachView() {
+        if (this.glpv != null) {
+            this.glpv.setKeepScreenOn(false);
+            this.glpv = null;
+            closeCamera();
+            GPUImageDestroy();
         }
     }
 
     public void setVideoOrientation(int orientation) {
-        this.videoOri = orientation;
+        this.videoOrientation = orientation == VIDEO_ORIENTATION_PORTRAIT ? Surface.ROTATION_0 : Surface.ROTATION_90;
     }
 
-    public void setCameraOrientation(int orientation) {
-        this.customCameraOri = orientation;
+
+    public void openCamera(boolean frontCamera) {
+        this.isOpenFrontCamera = frontCamera;
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(ctx);
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                bindImageAnalysis(cameraProvider, this.isOpenFrontCamera);
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, ContextCompat.getMainExecutor(this.ctx));
     }
 
-    public void setOutputUrl(String outputUrl) {
-        this.outputUrl = outputUrl.trim();
+    public void closeCamera() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(ctx);
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                cameraProvider.unbindAll();
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }, ContextCompat.getMainExecutor(this.ctx));
     }
 
-    public void setPageUrl(String pageUrl) {
-        this.pageUrl = pageUrl.trim();
+    public void switchCamera() {
+        this.isOpenFrontCamera = !this.isOpenFrontCamera;
+        closeCamera();
+        openCamera(this.isOpenFrontCamera);
     }
 
-    public void setSwfUrl(String swfUrl) {
-        this.swfUrl = swfUrl.trim();
+    public CameraInfo getCameraInfo() {
+        return mCamera.getCameraInfo();
     }
 
-    public void setConnArgs(String connArgs) {
-        this.connArgs = connArgs;
+    private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider, boolean front) {
+        CameraSelector cameraSelector = front ? CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
+
+        Preview preview = new Preview.Builder()
+                .setTargetResolution(new Size(videoWidth, videoHeight))
+                .setTargetRotation(videoOrientation)
+                .build();
+        preview.setSurfaceProvider(this.glpv.getSurfaceProvider());
+        mCamera = cameraProvider.bindToLifecycle((LifecycleOwner) this.ctx, cameraSelector, preview);
     }
 
-    public void setCameraPreview(NodeCameraView cameraPreview, int cameraID, boolean frontMirror) {
-        mNodeCameraView = cameraPreview;
-        mNodeCameraView.setNodeCameraViewCallback(this);
-        cameraId = cameraID;
-        isDisplayFrontMirror = frontMirror;
-    }
-
-    public void setAudioParam(int bitrate, int profile) {
-        jniSetAudioParam(bitrate, profile, 44100);
-    }
-
-    public void setAudioParam(int bitrate, int profile, int sampleRate) {
-        jniSetAudioParam(bitrate, profile, sampleRate);
-    }
-
-    public void setLogLevel(int logLevel) {
-        this.logLevel = logLevel;
-    }
-
-    public int switchCamera() {
-        if (mNodeCameraView == null) {
-            return -1;
-        }
-        int ret = mNodeCameraView.switchCamera();
-        cameraId = ret >= 0 ? ret : cameraId;
-        return ret;
-    }
-
-    public int startPreview() {
-        if (mNodeCameraView == null) {
-            return -1;
-        }
-        int ret = mNodeCameraView.startPreview(cameraId);
-        isFrontCamera = mNodeCameraView.isFrontCamera();
-        cameraOri = getCameraOri();
-        surfaceOri = getWindowRotation();
-        if (ret == 0) {
-            isStartPreview = true;
-        }
-        return ret;
-
-    }
-
-    public int stopPreview() {
-        if (mNodeCameraView == null) {
-            return -1;
-        }
-        isStartPreview = false;
-        return mNodeCameraView.stopPreview();
-    }
-
-    public int setZoomScale(int zoomScale) {
-        if (mNodeCameraView == null) {
-            return -1;
-        }
-        if (zoomScale < 0 || zoomScale > 100) {
-            return -2;
-        }
-        return jniSetScaleGPUImage(zoomScale);
-    }
-
-    public int setFlashEnable(boolean flashEnable) {
-        if (mNodeCameraView == null) {
-            return -1;
-        }
-        return mNodeCameraView.setFlashEnable(flashEnable);
-    }
-
-    public int setAutoFocus(boolean autoFocus) {
-        if (mNodeCameraView == null) {
-            return -1;
-        }
-        return mNodeCameraView.setAutoFocus(autoFocus);
-    }
-
-    public void capturePicture(CapturePictureListener listener) {
-        this.mCapturePictureListener = listener;
-        jniRequestScreenShot();
-    }
-
-    public void setNodePublisherDelegate(NodePublisherDelegate delegate) {
-        this.mNodePublisherDelegate = delegate;
-    }
-
-    public void setNodePublisherAudioRawDelegate(NodePublisherAudioRawDelegate nodePublisherAudioRawDelegate) {
-        this.mNodePublisherAudioRawDelegate = nodePublisherAudioRawDelegate;
-        jniEnableAudioRawCallback();
-    }
-
-    public void setNodePublisherVideoTextureDelegate(NodePublisherVideoTextureDelegate nodePublisherVideoTextureDelegate) {
-        this.mNodePublisherVideoTextureDelegate = nodePublisherVideoTextureDelegate;
-        jniUseCustomFilter();
-    }
-
-    private void onAudioRaw(int channels, int samplerate, byte[] data, int size) {
-        if (mNodePublisherAudioRawDelegate != null) {
-            mNodePublisherAudioRawDelegate.onAudioRawCallback(this, channels, samplerate, data, size);
+    private void onEvent(int event, String msg) {
+//        Log.d(TAG, "on Event: " + event + " Message:" + msg);
+        if (this.onNodePublisherEventListener != null) {
+            this.onNodePublisherEventListener.onEventCallback(this, event, msg);
         }
     }
 
-    private void onEvent(int event, String eventMsg) {
-        if (mNodePublisherDelegate != null) {
-            mNodePublisherDelegate.onEventCallback(this, event, eventMsg);
+    private void onCreateEffector() {
+        if (this.onNodePublisherEffectorListener != null) {
+            this.onNodePublisherEffectorListener.onCreateEffector(this.ctx);
         }
     }
 
-    private void onCapture(byte[] pictureBuffer, int width, int height, int orientation) {
-        if (mCapturePictureListener != null) {
-            Bitmap sBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            sBitmap.copyPixelsFromBuffer(ByteBuffer.wrap(pictureBuffer));
-            Matrix matrix = new Matrix();
-            matrix.postRotate(orientation);
-            Bitmap dBitmap = Bitmap.createBitmap(sBitmap, 0, 0, width, height, matrix, true);
-            sBitmap.recycle();
-            mCapturePictureListener.onCaptureCallback(dBitmap);
+    private int onProcessEffector(int textureID) {
+        if (this.onNodePublisherEffectorListener != null) {
+            textureID = this.onNodePublisherEffectorListener.onProcessEffector(textureID, this.videoWidth, this.videoHeight);
+        }
+        return textureID;
+    }
+
+    private void onReleaseEffector() {
+        if (this.onNodePublisherEffectorListener != null) {
+            this.onNodePublisherEffectorListener.onReleaseEffector();
         }
     }
 
-    public interface CapturePictureListener {
-        void onCaptureCallback(Bitmap picture);
+    protected void finalize() {
+        jniFree();
     }
 
-    private native long jniInit(Object context, String premium);
+    private native long jniInit(Context context, String license);
 
-    private native void jniDeInit();
+    private native void jniFree();
 
-    private native int jniInitGPUImage();
+    public native void setLogLevel(int logLevel);
 
-    private native int jniChangeGPUImage(int cameraWidth, int cameraHeight, int surfaceWidth, int surfaceHeight);
+    public native void setHWAccelEnable(boolean enable);
 
-    private native int jniDrawGPUImage(int textureId);
+    public native void setVideoFrontMirror(boolean mirror);
 
-    private native int jniFreeGPUImage();
+    public native void setCameraFrontMirror(boolean mirror);
 
-    private native int jniSetScaleGPUImage(int zoomScale);
+    public native void setAudioCodecParam(int codec, int profile, int sampleRate, int channels, int bitrate);
 
-    private native void jniRequestScreenShot();
+    public native void setVideoCodecParam(int codec, int profile, int width, int height, int fps, int bitrate);
 
-    private native void jniAudioMuted(boolean pause);
-
-    private native void jniSetAudioParam(int bitrate, int profile, int sampleRate);
-
-    private native void jniUseCustomFilter();
-
-    private native void jniEnableAudioRawCallback();
-
-    public native void setVideoParam(int preset, int fps, int bitrate, int profile, boolean frontMirror);
-
-    public native void setAutoReconnectWaitTimeout(int autoReconnectWaitTimeout);
-
-    public native void setConnectWaitTimeout(int connectWaitTimeout);
-
-    public native void setBeautyLevel(int beautyLevel);
-
-    public native void setHwEnable(boolean hwEnable);
-
-    public native void setCryptoKey(String cryptoKey);
-
-    public native void setAudioEnable(boolean audioEnable);
-
-    public native void setVideoEnable(boolean videoEnable);
-
-    public native void setDenoiseEnable(boolean denoiseEnable);
-
-    public native void setDynamicRateEnable(boolean dynamicRateEnable);
+    public native void setVideoRateControl(int rc);
 
     public native void setKeyFrameInterval(int keyFrameInterval);
 
-    public native void setPublishType(int publishType);
+    /**
+     * 设置视频解密密码
+     *
+     * @param cryptoKey 16字节密码
+     */
+    public native void setCryptoKey(@NonNull String cryptoKey);
 
-    public native int pushRawvideo(byte[] data, int size);
-
-    public native int start();
+    public native int start(@NonNull String url);
 
     public native int stop();
 
+    private native int GPUImageCreate(int textureID);
 
-    @Override
-    public void OnCreate() {
-        if (this.mNodePublisherVideoTextureDelegate != null) {
-            this.mNodePublisherVideoTextureDelegate.onCreateTextureCallback(this);
+    private native int GPUImageChange(int sw, int sh, int cw, int ch, int so, int co, boolean f);
+
+    private native int GPUImageDraw(int textureID, float[] mtx, int len);
+
+    private native int GPUImageDestroy();
+
+    private native int GPUImageGenOESTextureID();
+
+    private void onViewChange() {
+        if (this.cameraWidth == 0 || this.cameraHeight == 0 || this.surfaceWidth == 0 || this.surfaceHeight == 0) {
+            return;
         }
-        jniInitGPUImage();
+        WindowManager wm = (WindowManager) this.ctx.getSystemService(Context.WINDOW_SERVICE);
+        int surfaceRotation = wm.getDefaultDisplay().getRotation();
+        int surfaceRotationDegrees = getCameraInfo().getSensorRotationDegrees(surfaceRotation);
+        int sensorRotationDegrees = getCameraInfo().getSensorRotationDegrees(this.videoOrientation);
+        GPUImageChange(this.surfaceWidth, this.surfaceHeight, this.cameraWidth, this.cameraHeight, surfaceRotationDegrees, sensorRotationDegrees, this.isOpenFrontCamera);
     }
 
-    @Override
-    public void OnChange(int cameraWidth, int cameraHeight, int surfaceWidth, int surfaceHeight) {
-        this.cameraOri = getCameraOri();
-        this.surfaceOri = getWindowRotation();
-        this.cameraWidth = cameraWidth;
-        this.cameraHeight = cameraHeight;
-        this.isFrontCamera = mNodeCameraView.isFrontCamera();
-        if (this.mNodePublisherVideoTextureDelegate != null) {
-            this.mNodePublisherVideoTextureDelegate.onChangeTextureCallback(this, this.isFrontCamera, this.cameraOri, this.surfaceOri);
+    private class GLCameraView extends GLSurfaceView implements GLSurfaceView.Renderer {
+        private static final String TAG = "NodeMedia.GLCameraView";
+
+        private SurfaceTexture surfaceTexture;
+        private int textureId = -1;
+        private Context context;
+        private float transformMatrix[] = new float[16];
+
+        protected GLCameraView(Context context) {
+            super(context);
+            this.context = context;
+            setEGLContextClientVersion(2);
+            setRenderer(this);
+            setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         }
-        jniChangeGPUImage(cameraWidth, cameraHeight, surfaceWidth, surfaceHeight);
+
+        private Preview.SurfaceProvider getSurfaceProvider() {
+            return request -> {
+                Size resolution = request.getResolution();
+                surfaceTexture.setDefaultBufferSize(resolution.getWidth(), resolution.getHeight());
+                request.provideSurface(new Surface(surfaceTexture), ContextCompat.getMainExecutor(this.context), result -> {
+                    result.getSurface().release();
+                });
+                this.queueEvent(() -> {
+                    NodePublisher.this.cameraWidth = resolution.getWidth();
+                    NodePublisher.this.cameraHeight = resolution.getHeight();
+                    NodePublisher.this.onViewChange();
+                });
+            };
+        }
+
+        @Override
+        public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
+            textureId = GPUImageGenOESTextureID();
+            surfaceTexture = new SurfaceTexture(textureId);
+            surfaceTexture.setOnFrameAvailableListener(surfaceTexture -> requestRender());
+            NodePublisher.this.GPUImageCreate(textureId);
+        }
+
+        @Override
+        public void onSurfaceChanged(GL10 gl10, int w, int h) {
+            NodePublisher.this.surfaceWidth = w;
+            NodePublisher.this.surfaceHeight = h;
+            NodePublisher.this.onViewChange();
+        }
+
+        @Override
+        public void onDrawFrame(GL10 gl10) {
+            surfaceTexture.updateTexImage();
+            surfaceTexture.getTransformMatrix(transformMatrix);
+            NodePublisher.this.GPUImageDraw(textureId, transformMatrix, transformMatrix.length);
+        }
     }
 
-    @Override
-    public void OnDraw(int textureId) {
-        if (this.mNodePublisherVideoTextureDelegate != null) {
-            textureId = this.mNodePublisherVideoTextureDelegate.onDrawTextureCallback(this, textureId, this.cameraWidth, this.cameraHeight,
-                    this.isFrontCamera, this.cameraOri);
-        }
-        jniDrawGPUImage(textureId);
+    public interface OnNodePublisherEffectorListener {
+
+        void onCreateEffector(Context context);
+
+        int onProcessEffector(int textureID, int width, int height);
+
+        void onReleaseEffector();
+
     }
 
-    @Override
-    public void OnDestroy() {
-        if (this.mNodePublisherVideoTextureDelegate != null) {
-            this.mNodePublisherVideoTextureDelegate.onDestroyTextureCallback(this);
-        }
-        jniFreeGPUImage();
+    public interface OnNodePublisherEventListener {
+        void onEventCallback(NodePublisher publisher, int event, String msg);
     }
 }

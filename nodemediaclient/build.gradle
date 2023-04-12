@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 33
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 30
-        versionCode 2923
-        versionName "2.9.23"
+        minSdkVersion 21
+        targetSdkVersion 33
+        versionCode 30100
+        versionName "3.1.0"
     }
 
     buildTypes {
@@ -23,6 +23,13 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    def camerax_version = "1.2.2"
+    implementation "androidx.camera:camera-core:${camerax_version}"
+    implementation "androidx.camera:camera-camera2:${camerax_version}"
+    implementation "androidx.camera:camera-lifecycle:${camerax_version}"
+    implementation "androidx.camera:camera-view:${camerax_version}"
+    implementation "androidx.camera:camera-extensions:${camerax_version}"
+    implementation "androidx.appcompat:appcompat:1.6.1"
 }
 
 afterEvaluate {
@@ -31,9 +38,9 @@ afterEvaluate {
             // Creates a Maven publication called "release".
             release(MavenPublication) {
                 from components.release
-                groupId = 'com.github.NodeMedia'
+                groupId = 'cn.nodemedia'
                 artifactId = 'NodeMediaClient-Android'
-                version = '2.9.23'
+                version = '3.1.0'
             }
         }
     }
