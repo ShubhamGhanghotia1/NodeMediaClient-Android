@@ -15,7 +15,6 @@ import android.view.Surface;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-
 import androidx.annotation.NonNull;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfo;
@@ -24,10 +23,8 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ExecutionException;
-
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -121,7 +118,6 @@ public class NodePublisher {
         this.videoOrientation = orientation == VIDEO_ORIENTATION_PORTRAIT ? Surface.ROTATION_0 : Surface.ROTATION_90;
     }
 
-
     public void openCamera(boolean frontCamera) {
         this.isOpenFrontCamera = frontCamera;
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(ctx);
@@ -153,6 +149,10 @@ public class NodePublisher {
         openCamera(this.isOpenFrontCamera);
     }
 
+    public Camera getCamera() {
+        return mCamera;
+    }
+
     public CameraInfo getCameraInfo() {
         return mCamera.getCameraInfo();
     }
@@ -165,7 +165,7 @@ public class NodePublisher {
                 .setTargetRotation(videoOrientation)
                 .build();
         preview.setSurfaceProvider(this.glpv.getSurfaceProvider());
-        mCamera = cameraProvider.bindToLifecycle((LifecycleOwner) this.ctx, cameraSelector, preview);
+        mCamera = cameraProvider.bindToLifecycle((LifecycleOwner) this.ctx, cameraSelector  , preview);
     }
 
     private void onEvent(int event, String msg) {
@@ -245,9 +245,8 @@ public class NodePublisher {
         }
         WindowManager wm = (WindowManager) this.ctx.getSystemService(Context.WINDOW_SERVICE);
         int surfaceRotation = wm.getDefaultDisplay().getRotation();
-        int surfaceRotationDegrees = getCameraInfo().getSensorRotationDegrees(surfaceRotation);
         int sensorRotationDegrees = getCameraInfo().getSensorRotationDegrees(this.videoOrientation);
-        GPUImageChange(this.surfaceWidth, this.surfaceHeight, this.cameraWidth, this.cameraHeight, surfaceRotationDegrees, sensorRotationDegrees, this.isOpenFrontCamera);
+        GPUImageChange(this.surfaceWidth, this.surfaceHeight, this.cameraWidth, this.cameraHeight, surfaceRotation, sensorRotationDegrees, this.isOpenFrontCamera);
     }
 
     private class GLCameraView extends GLSurfaceView implements GLSurfaceView.Renderer {
