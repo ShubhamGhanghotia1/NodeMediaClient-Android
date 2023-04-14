@@ -2,6 +2,24 @@
 [![](https://jitpack.io/v/NodeMedia/NodeMediaClient-Android.svg)](https://jitpack.io/#NodeMedia/NodeMediaClient-Android)   
 A simple, high-performance, low-latency live streaming SDK.
 
+## Features
+### Play
+* RTMP/RTSP/HLS/HTTP/KMP/UDP protocols
+* FLV/MP4/fMP4/MKV/MPEGTS demuxers
+* H264/H265 video decoders
+* AAC/OPUS/G711/SPEEX/NELLYMOSER audio decoders
+* Hardware Acceleration
+* Low latency
+* Delay elimination
+
+### Publish
+* RTMP/RTSP/HLS/HTTP/KMP/UDP protocols
+* FLV/MPEGTS muxers
+* H264/H265 video encoders 
+* AAC audio encoder
+* Hardware Acceleration
+* Arbitrary video resolution
+
 ## Install
 ### 1. Add the JitPack repository to your build file
 ```
