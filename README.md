@@ -18,8 +18,10 @@ dependencyResolutionManagement {
 ### 2. Add the dependency
 ```
 dependencies {
-	        implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.1.2'
+    implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.1.2'
 }
 ```
 
-##
+## License
+A commercial license is required.  
+[https://www.nodemedia.cn/product/nodemediaclient-android/](https://www.nodemedia.cn/product/nodemediaclient-android/)
