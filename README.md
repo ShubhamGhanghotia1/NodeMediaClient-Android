@@ -26,16 +26,16 @@ dependencies {
 
 ### 1. Add permission INTERNET
 ```
-    <uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.INTERNET" />
 ```
 
 ### 2. Setting up the layout
 ```
-    <FrameLayout
-        android:id="@+id/video_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </FrameLayout>
+<FrameLayout
+    android:id="@+id/video_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+</FrameLayout>
 ```
 
 ### 3. Play the stream
@@ -67,13 +67,13 @@ That's it. Very simple!
 ## Publish Live Streaming
 ### 1. Request more permissions
 ```
-    <uses-feature android:name="android.hardware.camera.any" />
+<uses-feature android:name="android.hardware.camera.any" />
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 
 ### 2. Permission to apply
@@ -85,27 +85,27 @@ private static final String[] PERMISSIONS = new String[]{
         Manifest.permission.RECORD_AUDIO};
 private static final int REQUEST_PERMISSION_CODE = 0XFF00;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        requestPermission();
-        ……………………
-    }
-    
-    private void requestPermission() {
-        ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, REQUEST_PERMISSION_CODE);
-    }
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    requestPermission();
+    ……………………
+}
+
+private void requestPermission() {
+    ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, REQUEST_PERMISSION_CODE);
+}
 
 ```
 
 ### 3. Setting up the layout
 ```
-    <FrameLayout
-        android:id="@+id/camera_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </FrameLayout>
+<FrameLayout
+    android:id="@+id/camera_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+</FrameLayout>
 ```
 
 ### 4.Start Publish
