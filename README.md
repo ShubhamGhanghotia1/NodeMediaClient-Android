@@ -1,5 +1,6 @@
 # NodeMediaClient-Android
 [![](https://jitpack.io/v/NodeMedia/NodeMediaClient-Android.svg)](https://jitpack.io/#NodeMedia/NodeMediaClient-Android)   
+A simple, powerful, high performance live streaming SDK.
 
 ## Install
 ### 1. Add the JitPack repository to your build file
@@ -21,3 +22,4 @@ dependencies {
 }
 ```
 
+##
