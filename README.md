@@ -22,6 +22,124 @@ dependencies {
 }
 ```
 
+## Play Live Streaming
+
+### 1. Add permission INTERNET
+```
+    <uses-permission android:name="android.permission.INTERNET" />
+```
+
+### 2. Setting up the layout
+```
+    <FrameLayout
+        android:id="@+id/video_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </FrameLayout>
+```
+
+### 3. Play the stream
+```
+private NodePlayer np;
+    
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+    setContentView(R.layout.activity_playview);
+
+    FrameLayout vv = findViewById(R.id.video_view);
+    np = new NodePlayer(this,"");
+    np.attachView(vv);
+    np.start("rtmp://192.168.0.2/live/demo");
+}
+    
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    np.detachView();
+    np.stop();
+}
+```
+That's it. Very simple!
+
+
+## Publish Live Streaming
+### 1. Request more permissions
+```
+    <uses-feature android:name="android.hardware.camera.any" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+```
+
+### 2. Permission to apply
+```
+private static final String[] PERMISSIONS = new String[]{
+        Manifest.permission.READ_EXTERNAL_STORAGE,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        Manifest.permission.CAMERA,
+        Manifest.permission.RECORD_AUDIO};
+private static final int REQUEST_PERMISSION_CODE = 0XFF00;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        requestPermission();
+        ……………………
+    }
+    
+    private void requestPermission() {
+        ActivityCompat.requestPermissions(MainActivity.this, PERMISSIONS, REQUEST_PERMISSION_CODE);
+    }
+
+```
+
+### 3. Setting up the layout
+```
+    <FrameLayout
+        android:id="@+id/camera_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </FrameLayout>
+```
+
+### 4.Start Publish
+```
+private NodePublisher np;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+    setContentView(R.layout.activity_publish_view);
+    FrameLayout fl = findViewById(R.id.camera_view);
+
+    np = new NodePublisher(this, "");
+    np.setAudioCodecParam(NodePublisher.NMC_CODEC_ID_AAC, NodePublisher.NMC_PROFILE_AUTO, 48000, 1, 64_000);
+    np.setVideoOrientation(NodePublisher.VIDEO_ORIENTATION_PORTRAIT);
+    np.setVideoCodecParam(NodePublisher.NMC_CODEC_ID_H264, NodePublisher.NMC_PROFILE_AUTO, 480, 854, 30, 1_000_000);
+    np.attachView(fl);
+    np.openCamera(true);
+    Button publishBtn = findViewById(R.id.publish_btn);
+    publishBtn.setOnClickListener((v) -> {
+        np.start("rtmp://192.168.0.2/live/demo");
+    });
+}
+
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    np.detachView();
+    np.closeCamera();
+    np.stop();
+}
+```
+
 ## License
 A commercial license is required.  
 [https://www.nodemedia.cn/product/nodemediaclient-android/](https://www.nodemedia.cn/product/nodemediaclient-android/)
