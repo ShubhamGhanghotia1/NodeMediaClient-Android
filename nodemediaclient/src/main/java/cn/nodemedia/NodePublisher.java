@@ -58,7 +58,8 @@ public class NodePublisher {
     public static final int VIDEO_RC_VBV = 3;
 
     public static final int VIDEO_ORIENTATION_PORTRAIT = 0;
-    public static final int VIDEO_ORIENTATION_LANDSCAPE = 1;
+    public static final int VIDEO_ORIENTATION_LANDSCAPE_RIGHT = 1;
+    public static final int VIDEO_ORIENTATION_LANDSCAPE_LEFT = 3;
 
     private static final String TAG = "NodeMedia.java";
     private OnNodePublisherEventListener onNodePublisherEventListener;
@@ -115,7 +116,7 @@ public class NodePublisher {
     }
 
     public void setVideoOrientation(int orientation) {
-        this.videoOrientation = orientation == VIDEO_ORIENTATION_PORTRAIT ? Surface.ROTATION_0 : Surface.ROTATION_90;
+        this.videoOrientation = orientation;
     }
 
     public void openCamera(boolean frontCamera) {
@@ -205,6 +206,8 @@ public class NodePublisher {
     public native void setLogLevel(int logLevel);
 
     public native void setHWAccelEnable(boolean enable);
+
+    public native void setDenoiseEnable(boolean enable);
 
     public native void setVideoFrontMirror(boolean mirror);
 
