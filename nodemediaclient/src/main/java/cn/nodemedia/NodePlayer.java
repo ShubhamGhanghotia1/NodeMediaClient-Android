@@ -24,6 +24,11 @@ public class NodePlayer implements TextureView.SurfaceTextureListener {
     public static final int LOG_LEVEL_INFO = 1;
     public static final int LOG_LEVEL_DEBUG = 2;
 
+    public static final String RTSP_TRANSPORT_UDP = "udp";
+    public static final String RTSP_TRANSPORT_TCP = "tcp";
+    public static final String RTSP_TRANSPORT_UDP_MULTICAST = "udp_multicast";
+    public static final String RTSP_TRANSPORT_HTTP = "http";
+
     private static final String TAG = "NodeMedia.java";
 
     private OnNodePlayerEventListener onNodePlayerEventListener = null;
@@ -208,6 +213,27 @@ public class NodePlayer implements TextureView.SurfaceTextureListener {
      */
     public native void setVideoSurface(Surface surface);
 
+    public native void setRTMPPageUrl(String rtmpPageUrl);
+
+    public native void setRTMPSwfUrl(String rtmpSwfUrl);
+
+    /**
+     * 设置RTSP的传输协议， 默认是UDP
+     * @param rtspTransport
+     */
+    public native void setRTSPTransport(String rtspTransport);
+
+    /**
+     * 设置HTTP Referer
+     * @param httpReferer
+     */
+    public native void setHTTPReferer(String httpReferer);
+
+    /**
+     * 设置HTTP User-Agent
+     * @param httpUserAgent
+     */
+    public native void setHTTPUserAgent(String httpUserAgent);
     /**
      * 设置视频解密密码
      *
