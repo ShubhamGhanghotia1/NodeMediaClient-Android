@@ -161,3 +161,9 @@ protected void onDestroy() {
 ## License
 A commercial license is required.  
 [https://www.nodemedia.cn/product/nodemediaclient-android/](https://www.nodemedia.cn/product/nodemediaclient-android/)
+
+## Business Technical service
+* QQ: 281269007
+* Email: service@nodemedia.cn
+* Telegram: https://t.me/illuspas
+* Group: https://t.me/NodeMedia
