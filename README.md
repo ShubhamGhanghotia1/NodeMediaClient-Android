@@ -36,7 +36,7 @@ dependencyResolutionManagement {
 ### 2. Add the dependency
 ```
 dependencies {
-    implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.1.9'
+    implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.1.10'
 }
 ```
 
