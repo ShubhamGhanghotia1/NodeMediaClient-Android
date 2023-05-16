@@ -228,6 +228,10 @@ public class NodePublisher {
      */
     public native void setCryptoKey(@NonNull String cryptoKey);
 
+    public native int addOutput(@NonNull String url);
+
+    public native int removeOutputs();
+
     public native int start(@NonNull String url);
 
     public native int stop();

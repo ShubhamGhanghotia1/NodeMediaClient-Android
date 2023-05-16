@@ -19,6 +19,7 @@ A simple, high-performance, low-latency live streaming SDK.
 * AAC audio encoder
 * Hardware Acceleration
 * Arbitrary video resolution
+* Multiple output
 
 ## Install
 ### 1. Add the JitPack repository to your build file
@@ -36,7 +37,7 @@ dependencyResolutionManagement {
 ### 2. Add the dependency
 ```
 dependencies {
-    implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.1.10'
+    implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.1.11'
 }
 ```
 
