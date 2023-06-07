@@ -186,6 +186,18 @@ public class NodePlayer implements TextureView.SurfaceTextureListener {
     public native long getBufferPosition();
 
     /**
+     * 获取点播视频缓冲百分比
+     * @return 百分比
+     */
+    public native int getBufferPercentage();
+
+    /**
+     * 获取播放器是否真正在播放
+     * @return
+     */
+    public native boolean isPlaying();
+
+    /**
      * 设置日志等级
      *
      * @param logLevel 等级
