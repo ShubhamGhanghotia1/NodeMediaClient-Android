@@ -151,6 +151,19 @@ public class NodePlayer implements TextureView.SurfaceTextureListener {
     public native int screenshot(String filename);
 
     /**
+     * 开始录制
+     * @param filename 保存的文件名，支持mp4,flv,mkv,ts格式
+     * @return
+     */
+    public native int startRecord(String filename);
+
+    /**
+     * 停止录制
+     * @return
+     */
+    public native int stopRecord();
+
+    /**
      * 视频是否是点播回放
      *
      * @return 是否点播

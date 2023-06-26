@@ -11,6 +11,8 @@ A simple, high-performance, low-latency live streaming SDK.
 * Hardware Acceleration
 * Low latency
 * Delay elimination
+* Take screenshot while playing
+* Take record while playing, support mp4/flv/ts/mkv format 
 
 ### Publish
 * RTMP/RTSP/HLS/HTTP/KMP/UDP protocols
