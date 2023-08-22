@@ -169,4 +169,3 @@ A commercial license is required.
 * QQ: 281269007
 * Email: service@nodemedia.cn
 * Telegram: https://t.me/illuspas
-* Group: https://t.me/NodeMedia
