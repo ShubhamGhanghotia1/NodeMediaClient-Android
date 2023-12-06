@@ -61,6 +61,10 @@ public class NodePublisher {
     public static final int VIDEO_ORIENTATION_LANDSCAPE_RIGHT = 1;
     public static final int VIDEO_ORIENTATION_LANDSCAPE_LEFT = 3;
 
+    public static final int EffectorTextureTypeT2D = 0;
+    public static final int EffectorTextureTypeEOS = 1;
+
+
     private static final String TAG = "NodeMedia.java";
     private OnNodePublisherEventListener onNodePublisherEventListener;
     private OnNodePublisherEffectorListener onNodePublisherEffectorListener;
@@ -228,6 +232,12 @@ public class NodePublisher {
      */
     public native void setCryptoKey(@NonNull String cryptoKey);
 
+    /**
+     * 设置是否使用enhanced-rtmp 标准推流
+     * @param enhancedRtmp
+     */
+    public native void setEnhancedRtmp(boolean enhancedRtmp);
+
     public native int addOutput(@NonNull String url);
 
     public native int removeOutputs();
@@ -235,6 +245,8 @@ public class NodePublisher {
     public native int start(@NonNull String url);
 
     public native int stop();
+
+    public native void setEffectorTextureType(int type);
 
     private native int GPUImageCreate(int textureID);
 

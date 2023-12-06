@@ -13,6 +13,7 @@ A simple, high-performance, low-latency live streaming SDK.
 * Delay elimination
 * Take screenshot while playing
 * Take record while playing, support mp4/flv/ts/mkv format 
+* Compatible with flv_extension_id and Enhanced-Rtmp standards
 
 ### Publish
 * RTMP/RTSP/HLS/HTTP/KMP/UDP protocols
@@ -22,6 +23,7 @@ A simple, high-performance, low-latency live streaming SDK.
 * Hardware Acceleration
 * Arbitrary video resolution
 * Multiple output
+* Compatible with flv_extension_id and Enhanced-Rtmp standards
 
 ## Install
 ### 1. Add the JitPack repository to your build file
@@ -39,7 +41,7 @@ dependencyResolutionManagement {
 ### 2. Add the dependency
 ```
 dependencies {
-    implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.1.16'
+    implementation 'com.github.NodeMedia:NodeMediaClient-Android:3.2.0'
 }
 ```
 
