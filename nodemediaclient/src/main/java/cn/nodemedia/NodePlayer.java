@@ -205,7 +205,7 @@ public class NodePlayer implements TextureView.SurfaceTextureListener {
     public native int getBufferPercentage();
 
     /**
-     * 获取播放器是否真正在播放
+     * 获取播放器是否正在播放
      * @return
      */
     public native boolean isPlaying();
@@ -268,8 +268,9 @@ public class NodePlayer implements TextureView.SurfaceTextureListener {
 
     /**
      * 设置音量
-     *
-     * @param volume 0.0 --- 1.0
+     * 0.0 最小值 静音
+     * 1.0 默认值 原始音量
+     * @param volume 0.0 ~~ 1.0
      */
     public native void setVolume(float volume);
 

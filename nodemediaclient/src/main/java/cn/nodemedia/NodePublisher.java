@@ -238,6 +238,15 @@ public class NodePublisher {
      */
     public native void setEnhancedRtmp(boolean enhancedRtmp);
 
+    /**
+     * 设置音量
+     * 0.0 最小值 麦克风静音
+     * 1.0 默认值 原始音量
+     * 2.0 最大值 增益音量
+     * @param volume 0.0 ~~ 2.0
+     */
+    public native void setVolume(float volume);
+
     public native int addOutput(@NonNull String url);
 
     public native int removeOutputs();
